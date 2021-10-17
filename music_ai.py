@@ -18,7 +18,7 @@ HIGHEST_NOTE = 105  # Highest note considered is A7
 LOWEST_NOTE = 21  # Lowest note considered is A0
 INPUT_DIM = HIGHEST_NOTE - LOWEST_NOTE + 1
 
-
+// function to convert midi into PianoRoll which will be input for the model
 def midiToPianoRoll(filePath):
     midiData = MidiFile(filePath, clip=True)
 
@@ -102,6 +102,15 @@ def midiToPianoRoll(filePath):
     return pianoRoll.T
 
 
+def plotPianoRoll(pianoRoll):
+    plt.plot(range(pianoRoll.shape[0]), np.multiply(np.where(pianoRoll > 0, 1, math.nan), range(
+        pianoRoll.shape[1])), marker='_', markersize=0.25)
+    plt.title("Piano Roll of the Midi File")
+    plt.ylabel("Notes")
+    plt.xlabel("Time Slice")
+    plt.show()
+
+// function to convert back PianoRoll to midi
 def pianoRollToMidi(pianoRoll, filePath):
     # All these values are chosen arbitarily and can be changed to get optimal results
     TICKS_PER_TIME_SLICE = 1
@@ -140,16 +149,7 @@ def pianoRollToMidi(pianoRoll, filePath):
 
     track.append(MetaMessage('end_of_track', time=1))
     mid.save(filePath)
-
-
-def plotPianoRoll(pianoRoll):
-    plt.plot(range(pianoRoll.shape[0]), np.multiply(np.where(pianoRoll > 0, 1, math.nan), range(
-        pianoRoll.shape[1])), marker='_', markersize=0.25)
-    plt.title("Piano Roll of the Midi File")
-    plt.ylabel("Notes")
-    plt.xlabel("Time Slice")
-    plt.show()
-
+    
 
 Roll = midiToPianoRoll(newFilePath)
 plotPianoRoll(Roll)
