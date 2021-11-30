@@ -1,9 +1,13 @@
-# Music-Generation
+# Music-Generation-Using-AI
 Creating an LSTM model to generate music
 
-### music-generator
-Used to create basic sin wave sounds
+## Why LSTM based model
+RNN models, in general are usually suitable for purposes where a feedback system is required. Music generation highly rests on this concept only, where previous outputs are used for the next input. LSTMs are specialized in this domain, of carrying previous sequences for a longer period of time. This is helpful to produce meaningful music, as new generated music is inspired from the previous notes hit.
+The LSTM model has various gates like the forget gate and the input gate which helps to send the previous outputs as feedback.
 
-### music-ai
-Contains the functions to convert midi files to piano rolls and vice versa
+### Music-generator
+Used to create basic sin wave sounds.
+
+### Music-ai
+Contains the functions to convert midi files to piano rolls and vice versa.
 
