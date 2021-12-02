@@ -24,6 +24,9 @@ def obtainMidiFiles(dataDir):
 
     return midi_files
 
+# Music generator class which allows us
+# 1. To take test_input_music and generate music for the given test_input_music
+# 2. Saves the generated music file in designated FilePath using naming convention as a string composed of year, month, date and time
 
 class MusicGenerator:
     def __init__(self, model_path):
