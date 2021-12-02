@@ -55,28 +55,6 @@ def build_model1(x_train):
 
     return model
 
-
-def build_model2(x_train):
-
-    model = Sequential()
-
-    model.add(LSTM(NUM_UNITS[2], batch_input_shape=(
-        None, X_SEQ_LENGTH, INPUT_DIM), return_sequences=True))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.2))
-
-    model.add(TimeDistributed(Dense(OUTPUT_DIM, activation='softmax')))
-
-    model.build(x_train.shape)
-    model.summary()
-
-    # Compiling the model
-    model.compile(loss=LOSS_FUNCTION,
-                  optimizer=OPTIMIZER, metrics=['accuracy'])
-
-    return model
-
-
 # Training the model
 def train(modelPath):
     # Preparing the data
@@ -109,6 +87,27 @@ def train(modelPath):
     # model.save(modelPath)
 
     return hist
+
+
+def build_model2(x_train):
+
+    model = Sequential()
+
+    model.add(LSTM(NUM_UNITS[2], batch_input_shape=(
+        None, X_SEQ_LENGTH, INPUT_DIM), return_sequences=True))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.2))
+
+    model.add(TimeDistributed(Dense(OUTPUT_DIM, activation='softmax')))
+
+    model.build(x_train.shape)
+    model.summary()
+
+    # Compiling the model
+    model.compile(loss=LOSS_FUNCTION,
+                  optimizer=OPTIMIZER, metrics=['accuracy'])
+
+    return model
 
 
 if __name__ == "__main__":
