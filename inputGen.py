@@ -34,7 +34,11 @@ def midiToPianoRoll(filePath):
         x.type) == 'set_tempo']
 
     # Obtaining tempo in beats per minute format
-    TEMPO = MICROSECONDS_PER_MINUTE/tempo_events[0].tempo
+    if(len(tempo_events) != 0):
+        TEMPO = MICROSECONDS_PER_MINUTE/tempo_events[0].tempo
+    else:
+        TEMPO = 120
+
     TEMPO_IN_SECONDS = TEMPO/60  # tempo_in_seconds is the beats per second
 
     # Number of ticks we are considering for every column
@@ -113,7 +117,7 @@ def pianoRollToMidi(pianoRoll, filePath):
     TICKS_PER_TIME_SLICE = 1
     TEMPO = 1 / TIME_PER_TIME_SLICE
     RESOLUTION = 60 * TICKS_PER_TIME_SLICE
-    VELOCITY = 65
+    VELOCITY = 90
 
     mid = MidiFile(ticks_per_beat=int(RESOLUTION))
     track = MidiTrack()
@@ -178,9 +182,9 @@ def createSeqTrainInputs(pianoRolls_data, xSeqLength, ySeqLength):
     X = np.array(x)
     Y = np.array(y)
 
-    random_X, random_Y = shuffle(X, Y)
+    # random_X, random_Y = shuffle(X, Y)
 
-    return random_X, random_Y
+    return X, Y
 
 
 # Sequence data for testing the model (Only input sequence provided)
@@ -223,12 +227,15 @@ def plotPianoRoll(pianoRoll):
 
 
 if __name__ == "__main__":
-    path = pwd + '\\music_dataset\\adl-piano-midi\\Ambient\\Lounge\\Burt_Bacharach\\Arthurs_Theme.mid'
+    path = pwd + '\\music_dataset\\scales\\scale_a_major.mid'
+    newPath = pwd + '\\music_dataset\\sigurour_skuli\\8.mid'
     print(path)
-    pr = midiToPianoRoll(path)
+
+    pr = midiToPianoRoll(newPath)
     # print(pr)
 
-    # generatedFile = 'LSTM_gen_music-' + time.strftime("%Y_%m_%d_%H_%M")
-    # generatedFilePath = pwd + "\\output\\" + generatedFile + ".mid"
-    # print(generatedFilePath)
-    # pianoRollToMidi(pr, generatedFilePath)
+    generatedFile = 'Test' + time.strftime("%Y_%m_%d_%H_%M")
+    generatedFilePath = pwd + "\\output\\" + generatedFile + ".mid"
+    print(generatedFilePath)
+    pianoRollToMidi(pr, generatedFilePath)
+    plotPianoRoll(pr)
