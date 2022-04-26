@@ -2,25 +2,30 @@ from mido import MidiFile, Message, MetaMessage, MidiTrack
 from mido.midifiles.tracks import MidiTrack
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.utils import shuffle
 import math
 import os
 
+import time
 
 pwd = os.getcwd()
 
-#newFilePath = pwd + '\\music_dataset\\albeniz\\alb_esp1.mid'
-newFilePath = pwd + '\\music_dataset\\scales\\scale_c_major.mid'
-
-# Global variables
+# CONFIG VARIABLES
 TIME_PER_TIME_SLICE = 0.02  # No. of seconds to be in a single column
 MICROSECONDS_PER_MINUTE = 60000000  # 60sec * 100 * 100
 HIGHEST_NOTE = 105  # Highest note considered is A7
 LOWEST_NOTE = 21  # Lowest note considered is A0
-INPUT_DIM = HIGHEST_NOTE - LOWEST_NOTE + 1
+INPUT_DIM = HIGHEST_NOTE - LOWEST_NOTE + 1  # 85
 
-// function to convert midi into PianoRoll which will be input for the model
+
+# Converting a midi file into its piano roll form
 def midiToPianoRoll(filePath):
     midiData = MidiFile(filePath, clip=True)
+    # try:
+    #     midiData = MidiFile(filePath, clip=True)
+    # except:
+    #     print("Error: In filepath ", filePath)
+    #     return
 
     RESOLUTION = midiData.ticks_per_beat  # Resolution is the ticks per beat
 
@@ -29,7 +34,11 @@ def midiToPianoRoll(filePath):
         x.type) == 'set_tempo']
 
     # Obtaining tempo in beats per minute format
-    TEMPO = MICROSECONDS_PER_MINUTE/tempo_events[0].tempo
+    if(len(tempo_events) != 0):
+        TEMPO = MICROSECONDS_PER_MINUTE/tempo_events[0].tempo
+    else:
+        TEMPO = 120
+
     TEMPO_IN_SECONDS = TEMPO/60  # tempo_in_seconds is the beats per second
 
     # Number of ticks we are considering for every column
@@ -102,21 +111,13 @@ def midiToPianoRoll(filePath):
     return pianoRoll.T
 
 
-def plotPianoRoll(pianoRoll):
-    plt.plot(range(pianoRoll.shape[0]), np.multiply(np.where(pianoRoll > 0, 1, math.nan), range(
-        pianoRoll.shape[1])), marker='_', markersize=0.25)
-    plt.title("Piano Roll of the Midi File")
-    plt.ylabel("Notes")
-    plt.xlabel("Time Slice")
-    plt.show()
-
-// function to convert back PianoRoll to midi
+# Converting a piano roll format into a midi file format
 def pianoRollToMidi(pianoRoll, filePath):
     # All these values are chosen arbitarily and can be changed to get optimal results
     TICKS_PER_TIME_SLICE = 1
     TEMPO = 1 / TIME_PER_TIME_SLICE
     RESOLUTION = 60 * TICKS_PER_TIME_SLICE
-    VELOCITY = 65
+    VELOCITY = 90
 
     mid = MidiFile(ticks_per_beat=int(RESOLUTION))
     track = MidiTrack()
@@ -149,8 +150,92 @@ def pianoRollToMidi(pianoRoll, filePath):
 
     track.append(MetaMessage('end_of_track', time=1))
     mid.save(filePath)
-    
 
-Roll = midiToPianoRoll(newFilePath)
-plotPianoRoll(Roll)
-# pianoRollToMidi(Roll, pwd + '\\new_song.mid')
+
+# Obtaining data from dataset
+def getData(dataDir):
+    pianoRollData = []
+    for path, subdirs, files in os.walk(dataDir):
+        for file in files:
+            if file[-3:] == "mid":
+                filePath = os.path.join(path, file)
+                # print(filePath)
+                pianoRoll = midiToPianoRoll(filePath)
+                pianoRollData.append(pianoRoll)
+
+    return pianoRollData
+
+
+# Sequence data for training the model
+def createSeqTrainInputs(pianoRolls_data, xSeqLength, ySeqLength):
+    x = []
+    y = []
+
+    for pianoRoll in pianoRolls_data:
+        pos = 0
+        while pos + xSeqLength + ySeqLength < pianoRoll.shape[0]:
+            x.append(pianoRoll[pos: pos + xSeqLength])
+            y.append(pianoRoll[pos + xSeqLength: pos +
+                               xSeqLength + ySeqLength])
+            pos += xSeqLength
+
+    X = np.array(x)
+    Y = np.array(y)
+
+    # random_X, random_Y = shuffle(X, Y)
+
+    return X, Y
+
+
+# Sequence data for testing the model (Only input sequence provided)
+def createSeqTestInputs(pianoRolls_data, xSeqLength):
+    x_test = []
+
+    for pianoRoll in pianoRolls_data:
+        x = []
+        pos = 0
+        while pos + xSeqLength < pianoRoll.shape[0]:
+            x.append(pianoRoll[pos: pos + xSeqLength])
+            pos += xSeqLength
+
+        x_test.append(np.array(x))
+
+    return np.array(x_test)
+
+
+# Sequence to Piano Roll conversion
+def seqToPianoRoll(output, threshold=0.1):
+    pianoRoll = []
+    for seqOut in output:
+        for timeSlice in seqOut:
+            idx = [i for i, t in enumerate(timeSlice) if t > threshold]
+            pianoRollSlice = np.zeros(timeSlice.shape)
+            pianoRollSlice[idx] = 1
+            pianoRoll.append(pianoRollSlice)
+
+    return np.array(pianoRoll)
+
+
+# Function to plot the piano roll
+def plotPianoRoll(pianoRoll):
+    plt.plot(range(pianoRoll.shape[0]), np.multiply(np.where(pianoRoll > 0, 1, math.nan), range(
+        pianoRoll.shape[1])), marker='_', markersize=0.25)
+    plt.title("Piano Roll of the Midi File")
+    plt.ylabel("Notes")
+    plt.xlabel("Time Slice")
+    plt.show()
+
+
+if __name__ == "__main__":
+    path = pwd + '\\music_dataset\\scales\\scale_a_major.mid'
+    newPath = pwd + '\\music_dataset\\sigurour_skuli\\8.mid'
+    print(path)
+
+    pr = midiToPianoRoll(newPath)
+    # print(pr)
+
+    generatedFile = 'Test' + time.strftime("%Y_%m_%d_%H_%M")
+    generatedFilePath = pwd + "\\output\\" + generatedFile + ".mid"
+    print(generatedFilePath)
+    pianoRollToMidi(pr, generatedFilePath)
+    plotPianoRoll(pr)
